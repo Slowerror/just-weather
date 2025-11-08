@@ -3,9 +3,10 @@ package com.slowerror.justweather.data.remote
 import com.slowerror.justweather.BuildConfig
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
-import retrofit2.create
 import retrofit2.http.GET
 import retrofit2.http.Query
 
@@ -42,18 +43,28 @@ interface WeatherApiService {
         private const val WEATHER_ENDPOINT = "weather"
         private const val FORECAST_ENDPOINT = "forecast"
 
-        val json = Json {
+        private val json = Json {
             ignoreUnknownKeys = true
         }
 
+        private val loggingInterceptor = HttpLoggingInterceptor().apply {
+            level = HttpLoggingInterceptor.Level.BODY
+        }
+
+        private val okHttpClient = OkHttpClient.Builder()
+            .addInterceptor(loggingInterceptor)
+            .build()
 
         private val retrofit = Retrofit.Builder()
             .baseUrl(BASE_URL)
+            .client(okHttpClient)
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()
 
 
-        val weatherApi: WeatherApiService = retrofit.create()
+        val weatherApi: WeatherApiService by lazy {
+            retrofit.create(WeatherApiService::class.java)
+        }
 
     }
 }
