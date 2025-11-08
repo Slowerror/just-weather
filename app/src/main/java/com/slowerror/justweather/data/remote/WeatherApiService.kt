@@ -2,6 +2,7 @@ package com.slowerror.justweather.data.remote
 
 import com.slowerror.justweather.BuildConfig
 import kotlinx.serialization.json.Json
+import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -16,24 +17,21 @@ interface WeatherApiService {
     suspend fun getWeatherByLatLon(
         @Query("lat") lat: Double,
         @Query("lon") lon: Double,
-        @Query("lang") lang: String = "ru",
-        @Query("appid") appid: String = API_KEY
+        @Query("lang") lang: String = "ru"
     ): WeatherResponse
 
 
     @GET(WEATHER_ENDPOINT)
     suspend fun getWeatherByCity(
         @Query("q") cityName: String,
-        @Query("lang") lang: String = "ru",
-        @Query("appid") appid: String = API_KEY
+        @Query("lang") lang: String = "ru"
     ): WeatherResponse
 
     @GET(FORECAST_ENDPOINT)
     suspend fun getForecastFiveDays(
         @Query("lat") lat: Double,
         @Query("lon") lon: Double,
-        @Query("lang") lang: String = "ru",
-        @Query("appid") appid: String = API_KEY
+        @Query("lang") lang: String = "ru"
     ) : ForecastResponse
 
     companion object {
@@ -51,9 +49,28 @@ interface WeatherApiService {
             level = HttpLoggingInterceptor.Level.BODY
         }
 
+        // Этот интерсептор встраивает параметры (например api ключ) во все запросы
+        private val queryInterceptor = Interceptor { chain ->
+            val originalRequest = chain.request()
+            val originalUrl = originalRequest.url
+
+            val newUrl = originalUrl.newBuilder()
+                .addQueryParameter("appid", API_KEY)
+                .build()
+
+            val newRequest = originalRequest.newBuilder()
+                .url(newUrl)
+                .build()
+
+            chain.proceed(newRequest)
+
+        }
+
         private val okHttpClient = OkHttpClient.Builder()
             .addInterceptor(loggingInterceptor)
+            .addInterceptor(queryInterceptor)
             .build()
+
 
         private val retrofit = Retrofit.Builder()
             .baseUrl(BASE_URL)
