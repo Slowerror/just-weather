@@ -2,8 +2,9 @@ package com.slowerror.justweather.data.repository
 
 import com.slowerror.justweather.data.remote.WeatherApiService
 import com.slowerror.justweather.data.remote.WeatherResponse
+import javax.inject.Inject
 
-class WeatherRepositoryImpl(
+class WeatherRepositoryImpl @Inject constructor(
     private val weatherApi: WeatherApiService
 ) : WeatherRepository {
 
